@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend
+  namespace: todo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: todo-backend }}
+  template:
+    metadata: { labels: { app: todo-backend }}
+    spec:
+      containers:
+      - name: backend
+        image: your-registry/todo-backend:1.0
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef: { name: db-cred, key: POSTGRES_URL }
+        ports: [{ containerPort: 8080 }]
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: backend-svc
+  namespace: todo
+spec:
+  selector: { app: todo-backend }
+  ports: [{ port: 80, targetPort: 8080 }]
