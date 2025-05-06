@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend
+  namespace: todo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: todo-frontend }}
+  template:
+    metadata: { labels: { app: todo-frontend }}
+    spec:
+      containers:
+      - name: frontend
+        image: your-registry/todo-frontend:1.0
+        ports: [{ containerPort: 80 }]
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend-svc
+  namespace: todo
+spec:
+  type: LoadBalancer
+  selector: { app: todo-frontend }
+  ports: [{ port: 80 }]
