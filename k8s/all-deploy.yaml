@@ -1,0 +1,102 @@
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: todo-app
+
+---
+# DB Credentials Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+  namespace: todo-app
+type: Opaque
+stringData:
+  POSTGRES_URL: postgresql://todo_user:todo_pass@35.209.83.253:5432/tododb
+
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend
+  namespace: todo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-backend
+  template:
+    metadata:
+      labels:
+        app: todo-backend
+    spec:
+      containers:
+        - name: backend
+          image: shahrukhjamadar/todo-backend:1.0
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_URL
+          ports:
+            - containerPort: 8080
+
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-backend
+  namespace: todo-app
+spec:
+  selector:
+    app: todo-backend
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend
+  namespace: todo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-frontend
+  template:
+    metadata:
+      labels:
+        app: todo-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: shahrukhjamadar/todo-frontend:1.0
+          env:
+            - name: REACT_APP_API_URL
+              value: "http://todo-backend.todo-app.svc.cluster.local"
+          ports:
+            - containerPort: 80
+
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-frontend
+  namespace: todo-app
+spec:
+  selector:
+    app: todo-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  type: LoadBalancer
